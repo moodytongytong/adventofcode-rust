@@ -8,7 +8,7 @@ pub fn create_data_by_groups(filepath: &str) -> Result<Vec<String>, io::Error> {
 }
 
 pub fn find_sum_of_counts(data: Vec<String>, rule: &dyn Fn(&str) -> usize) -> usize {
-    data.iter().map(|group_data| find_pt1_count_from_group(group_data)).sum()
+    data.iter().map(|group_data| rule(group_data)).sum()
 }
 
 pub fn find_pt1_count_from_group(data: &str) -> usize {
@@ -20,9 +20,9 @@ pub fn find_pt1_count_from_group(data: &str) -> usize {
     unique_chars.len()
 }
 
-pub fn find_pt2_count_from_group(data: &str) -> usize {
-    3
-}
+// pub fn find_pt2_count_from_group(data: &str) -> usize {
+//     3
+// }
 
 
 #[cfg(test)]
@@ -42,10 +42,10 @@ mod tests {
         assert_eq!(3, find_pt1_count_from_group(group2_data));
     }
 
-    fn find_pt2_count_from_a_group() {
-        let group1_data = "abcx\nabcy\nabcz";
-        assert_eq!(3, find_pt2_count_from_group(group1_data));
-    }
+    // fn find_pt2_count_from_a_group() {
+    //     let group1_data = "abcx\nabcy\nabcz";
+    //     assert_eq!(3, find_pt2_count_from_group(group1_data));
+    // }
 
     #[test]
     fn data_correctly_created() -> Result<(), io::Error>{
