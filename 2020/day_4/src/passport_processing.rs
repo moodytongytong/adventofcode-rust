@@ -58,7 +58,7 @@ fn is_passport(record: &Record) -> bool {
 
 pub fn create_records_from_path(filepath: &str) -> Result<Vec<Record>, io::Error>{
     let raw_data = read_to_string(filepath)?;
-    let data: Vec<&str> = raw_data[..].split("\n\n").collect();
+    let data: Vec<&str> = raw_data.split("\n\n").collect();
     let mut records: Vec<Record> = Vec::new();
     for info in data {
         records.push(new_record(info));
