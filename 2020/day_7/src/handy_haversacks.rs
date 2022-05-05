@@ -1,14 +1,15 @@
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 // use std::str::FromStr;
 use regex::Regex;
 // use std::fmt;
 
+#[derive(Hash, PartialEq, Eq)]
 struct Rule {
     bag_color: String,
-    content: HashMap<String, u8>,
+    content: BTreeMap<String, u8>,
 }
 
 
@@ -17,28 +18,17 @@ fn tokenize(rule: &str) -> Vec<&str> {
     return separator.split(rule.trim_end()).collect();
 }
 
-// fn parse_tokens(bags: HashMap<&str,HashSet<&str>>, tokens: Vec<&str>) -> HashMap<&str,HashSet<&str>> {
-//             //     holder = tokens.pop(0)
-//         //     dependents = self.bags.get(holder,set())
-//         //     for token in tokens:
-//         //         if token := token.strip():
-//         //             dependents.add(token)
-//         //     self.bags[holder] = dependents
-//     bags
-// }
-
 impl Rule {
     fn new(line: &str) -> Self {
-        let mut content = HashMap::<String, u8>::new();
+        let mut content = BTreeMap::<String, u8>::new();
         let tokens: Vec<&str> = tokenize(line);
-        content.insert("shiny gold".to_string(), 1);
-        // let mut tokens_iter = tokens.iter();
+        for n in 1..tokens.len()-1 {
+            if let "no other" = tokens[n] {
+                break;
+            }
+            content.insert(tokens[n][2..].to_string(), tokens[n][0..1].parse::<u8>().unwrap());
+        }
 
-        // if let Some(bag) = tokens_iter.next() {
-            
-        // }
-        
-        // content.insert(Color::Gold("shiny".to_string()), 1);
         Rule {
             bag_color: tokens[0].to_string(),
             content,
@@ -46,33 +36,37 @@ impl Rule {
     }
 }
 
+fn get_rules(filepath: &str) -> Vec<Rule> {
+    let mut rules = Vec::<Rule>::new();
+    if let Ok(lines) = read_lines(filepath) {
+        for line in lines {
+            if let Ok(rule_info) = line {
+                rules.push(Rule::new(&rule_info));
+            }
+        }
+    }
+    rules
+}
+
+fn find_num_of_bag_colors_which_could_contain(target_bag_color: &str, rules: Vec<Rule>) -> usize {
+    let mut possible_colors = HashSet::<&str>::new();
+    let total = 0;
+    // loop {
+    //     for rule in &rules {
+    //         if rule.content.contains_key(target_bag_color) {
+    //             possible_colors.insert(&rule.bag_color);
+    //             total += 1;
+    //         }
+    //     }
+    // }
+    total
+}
+
 #[derive(Debug, Hash, PartialEq, Eq)]
 enum Color {
     White(String),
     Gold(String),
 }
-
-// impl fmt::Debug for Color {
-//     fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
-//         use Color::*;
-//         match self {
-//             White(variant) => write!(f, "White({:?})", variant),
-//             Gold(variant) => write!(f, "Gold({:?}", variant),
-//         }
-//     }
-// }
-
-// impl FromStr for Color {
-//     type Err = String;
-//     fn from_str(input: &str) -> Result<Color, String> {
-//         let components = get_components(input);
-//         match components.1 {
-//             "white" => Ok(Color::White(components.0.to_string())),
-//             "gold" => Ok(Color::Gold(components.0.to_string())),
-//             _ => Err("Unrecognized color".to_string()),
-//         }
-//     }
-// }
 
 fn get_components(phrase: &str) -> (&str, &str) {
     let words: Vec<&str> = phrase.split(" ").collect();
@@ -106,25 +100,44 @@ mod tests {
     }
 
     #[test]
+    fn test_tokenizer_works_on_empty_bag_rule() {
+        let tokens = tokenize("faded blue bags contain no other bags.");
+        assert_eq!("faded blue", tokens[0]);
+    }
+
+    #[test]
     fn test_a_simple_rule_correctly_created() {
         let rule = Rule::new("bright white bags contain 1 shiny gold bag.");
         assert_eq!("bright white", rule.bag_color);
         assert_eq!(1, rule.content["shiny gold"]);
     }
-    // MAKE THE TEST PASS MORE INTELLIGENTLY RATHER THAN HARDCODING
-    // ADD NEW TEST SO THAT A MORE COMPLICATED RULE COULD BE CREATED
 
+    #[test]
+    fn test_a_complex_rule_correctly_created() {
+        let rule = Rule::new("dark olive bags contain 3 faded blue bags, 4 dotted black bags.");
+        assert_eq!("dark olive", rule.bag_color);
+        assert_eq!(3, rule.content["faded blue"]);
+        assert_eq!(4, rule.content["dotted black"]);
+    }
+
+    #[test]
+    fn test_a_rule_for_empty_bag_correctly_created() {
+        let rule = Rule::new("faded blue bags contain no other bags.");
+        assert_eq!("faded blue", rule.bag_color);
+        assert_eq!(0, rule.content.len());
+    }
+
+    #[test]
+    fn can_correctly_create_set_of_all_rules() {
+        let rules = get_rules("test_data/test1.txt");
+        assert_eq!(9, rules.len());
+    }
+
+    // Need to implement the counting logic
+    
     // #[test]
-    // fn test_parser_works() {
-    //     // let bags = HashMap::<&str, HashSet<&str>>::new();
-    //     let tokens = tokenize("bright white bags contain 1 shiny gold bag.");
-    //     let bags = parse_tokens(HashMap::<&str, HashSet<&str>>::new(), tokens);
-    //     let expected = HashSet::<&str>::new();
-    //     expected.insert("1 shiny gold");
-    //     assert_eq!(expected, bags["bright white"]);
+    // fn can_correctly_number_of_bag_colors_which_could_contain_a_particular_colored_bags() {
+    //     let rules = get_rules("test_data/test1.txt");
+    //     assert_eq!(4, find_num_of_bag_colors_which_could_contain("shiny gold", rules));  // How best to name this function?
     // }
-
-
-    // the next thing to do is to succesfully parse a simple line of rule
-
 }
