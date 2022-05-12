@@ -1,11 +1,12 @@
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use regex::Regex;
+// use queues::Queue;
 
 #[derive(Hash, PartialEq, Eq, Debug)]
-struct Content {
+pub struct Content {
     content: BTreeMap<String, u8>,
 }
 
@@ -22,6 +23,16 @@ impl Content {
             content,
         }
     }
+
+    fn eventually_contains(&self, target_color: &str, rules: &HashMap<String, Content>) -> bool {
+        if self.content.contains_key(target_color) {
+            return true;
+        }
+        for color in self.content.keys() {
+            return rules[color].eventually_contains(target_color, rules);
+        }
+        false
+    }
 }
 
 fn tokenize(rule: &str) -> Vec<&str> {
@@ -29,7 +40,7 @@ fn tokenize(rule: &str) -> Vec<&str> {
     return separator.split(rule.trim_end()).collect();
 }
 
-fn get_rules(filepath: &str) -> HashMap<String, Content> {
+pub fn get_rules(filepath: &str) -> HashMap<String, Content> {
     let mut rules = HashMap::<String, Content>::new();
     if let Ok(lines) = read_lines(filepath) {
         for line in lines {
@@ -42,16 +53,22 @@ fn get_rules(filepath: &str) -> HashMap<String, Content> {
     rules
 }
 
-// #[derive(Debug, Hash, PartialEq, Eq)]
-// enum Color {
-//     White(String),
-//     Gold(String),
-// }
-
-// fn get_components(phrase: &str) -> (&str, &str) {
-//     let words: Vec<&str> = phrase.split(" ").collect();
-//     (words[0], words[1])
-// }
+pub fn find_num_of_colors_that_could_contain(target_color: &str, rules: HashMap<String, Content>) -> usize {
+    let mut possible_colors = HashSet::<String>::new();
+    for (color, content) in rules.iter() {
+        for key in content.content.keys() {
+            if possible_colors.contains(key) {
+                possible_colors.insert(color.clone());
+                continue;
+            }
+        }
+        if content.eventually_contains(target_color, &rules) {
+            possible_colors.insert(color.clone());
+        }
+    }
+    possible_colors.len()
+    // NEED TO REFACTOR HERE AND DEBUG THE PROBLEM.
+}
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where P: AsRef<Path>, {
@@ -98,5 +115,11 @@ mod tests {
         assert_eq!(expected_content_1, rules["bright white"]);
         assert_eq!(expected_content_2, rules["dark olive"]);
         assert_eq!(expected_content_3, rules["faded blue"]);
+    }
+
+    #[test]
+    fn can_obtain_number_of_colors_containing_a_particular_color() {
+        let rules = get_rules("test_data/test1.txt");
+        assert_eq!(4, find_num_of_colors_that_could_contain("shiny gold", rules));
     }
 }
