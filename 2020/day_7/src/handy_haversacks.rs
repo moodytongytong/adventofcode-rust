@@ -3,7 +3,6 @@ use std::io::{self, BufRead};
 use std::path::Path;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use regex::Regex;
-// use queues::Queue;
 
 #[derive(Hash, PartialEq, Eq, Debug)]
 pub struct Content {
@@ -28,10 +27,14 @@ impl Content {
         if self.content.contains_key(target_color) {
             return true;
         }
-        for color in self.content.keys() {
-            return rules[color].eventually_contains(target_color, rules);
+        if self.content.is_empty() {
+            return false;
         }
-        false
+        let mut result = false;
+        for color in self.content.keys() {
+            result = result || rules[color].eventually_contains(target_color, rules);
+        }
+        result
     }
 }
 
@@ -53,13 +56,13 @@ pub fn get_rules(filepath: &str) -> HashMap<String, Content> {
     rules
 }
 
-pub fn find_num_of_colors_that_could_contain(target_color: &str, rules: HashMap<String, Content>) -> usize {
+pub fn find_num_of_colors_that_could_contain(target_color: &str, rules: &HashMap<String, Content>) -> usize {
     let mut possible_colors = HashSet::<String>::new();
     for (color, content) in rules.iter() {
         for key in content.content.keys() {
             if possible_colors.contains(key) {
                 possible_colors.insert(color.clone());
-                continue;
+                break;
             }
         }
         if content.eventually_contains(target_color, &rules) {
@@ -67,7 +70,6 @@ pub fn find_num_of_colors_that_could_contain(target_color: &str, rules: HashMap<
         }
     }
     possible_colors.len()
-    // NEED TO REFACTOR HERE AND DEBUG THE PROBLEM.
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
@@ -118,8 +120,14 @@ mod tests {
     }
 
     #[test]
-    fn can_obtain_number_of_colors_containing_a_particular_color() {
+    fn can_obtain_number_of_colors_containing_a_particular_color_for_an_example_with_one_level_of_nexting() {
         let rules = get_rules("test_data/test1.txt");
-        assert_eq!(4, find_num_of_colors_that_could_contain("shiny gold", rules));
+        assert_eq!(4, find_num_of_colors_that_could_contain("shiny gold", &rules));
+    }
+
+    #[test]
+    fn can_obtain_number_of_colors_containing_a_particular_color_for_an_example_with_two_levels_of_nexting() {
+        let rules = get_rules("test_data/test3.txt");
+        assert_eq!(5, find_num_of_colors_that_could_contain("shiny gold", &rules));
     }
 }
