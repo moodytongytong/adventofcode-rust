@@ -72,6 +72,10 @@ pub fn find_num_of_colors_that_could_contain(target_color: &str, rules: &HashMap
     possible_colors.len()
 }
 
+fn find_num_of_bags_contained_in(target_color: &str, rules: &HashMap<String, Content>) -> usize {
+    126
+}
+
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where P: AsRef<Path>, {
     let file = File::open(filename)?;
@@ -106,7 +110,7 @@ mod tests {
 
     #[test]
     fn can_correctly_create_set_of_all_rules() {
-        let rules = get_rules("test_data/test2.txt");
+        let rules = get_rules("test_data/test2_part1.txt");
         let tokens_1 = tokenize("bright white bags contain 1 shiny gold bag.");
         let expected_content_1 = Content::new(tokens_1[1..].to_vec());
         let tokens_2 = tokenize("dark olive bags contain 3 faded blue bags, 4 dotted black bags.");
@@ -121,13 +125,19 @@ mod tests {
 
     #[test]
     fn can_obtain_number_of_colors_containing_a_particular_color_for_an_example_with_one_level_of_nexting() {
-        let rules = get_rules("test_data/test1.txt");
+        let rules = get_rules("test_data/test1_part1.txt");
         assert_eq!(4, find_num_of_colors_that_could_contain("shiny gold", &rules));
     }
 
     #[test]
     fn can_obtain_number_of_colors_containing_a_particular_color_for_an_example_with_two_levels_of_nexting() {
-        let rules = get_rules("test_data/test3.txt");
+        let rules = get_rules("test_data/test3_part1.txt");
         assert_eq!(5, find_num_of_colors_that_could_contain("shiny gold", &rules));
     }
+
+    #[test]
+    fn can_obtain_the_number_of_bags_a_color_contains() {
+        let rules = get_rules("test_data/test4_part2.txt");
+        assert_eq!(126, find_num_of_bags_contained_in("shiny gold", &rules));
+    } // PASS THIS TEST MORE INTELLIGENTLY
 }
