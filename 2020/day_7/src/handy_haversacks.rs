@@ -72,8 +72,16 @@ pub fn find_num_of_colors_that_could_contain(target_color: &str, rules: &HashMap
     possible_colors.len()
 }
 
-fn find_num_of_bags_contained_in(target_color: &str, rules: &HashMap<String, Content>) -> usize {
-    126
+pub fn find_num_of_bags_contained_in(target_color: &str, rules: &HashMap<String, Content>) -> usize {
+    if rules[target_color].content.is_empty() {
+        return 0;
+    } else {
+        let mut total: usize = 0;
+        for (color, number) in &rules[target_color].content {
+            total += *number as usize * find_num_of_bags_contained_in(&color, rules) as usize + *number as usize;
+        }
+        return total;
+    }
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
@@ -136,8 +144,20 @@ mod tests {
     }
 
     #[test]
+    fn can_obtain_the_number_of_bags_an_empty_color_contains() {
+        let rules = get_rules("test_data/test5_part2.txt");
+        assert_eq!(0, find_num_of_bags_contained_in("dotted black", &rules));
+    }
+
+    #[test]
+    fn can_obtain_the_number_of_bags_contained_in_a_simple_color() {
+        let rules = get_rules("test_data/test5_part2.txt");
+        assert_eq!(7, find_num_of_bags_contained_in("dark olive", &rules));
+    }
+
+    #[test]
     fn can_obtain_the_number_of_bags_a_color_contains() {
         let rules = get_rules("test_data/test4_part2.txt");
         assert_eq!(126, find_num_of_bags_contained_in("shiny gold", &rules));
-    } // PASS THIS TEST MORE INTELLIGENTLY
+    }
 }
