@@ -3,7 +3,7 @@ use std::io::{self, BufRead};
 use std::path::Path;
 use std::collections::HashSet;
 
-fn create_dataset_from(filepath: &str) -> Vec<usize> {
+pub fn create_dataset_from(filepath: &str) -> Vec<usize> {
     let mut dataset = Vec::<usize>::new();
     if let Ok(lines) = read_lines(filepath) {
         for line in lines {
@@ -15,7 +15,7 @@ fn create_dataset_from(filepath: &str) -> Vec<usize> {
     dataset
 }
 
-fn find_misbehaving_num_with_preamble(preamble_num: u8, dataset: &Vec<usize>) -> usize{
+pub fn find_misbehaving_num_with_preamble(preamble_num: u8, dataset: &Vec<usize>) -> usize{
     let mut start_index = 0;
     let mut end_index = preamble_num as usize - 1;
     let mut possible_nums_to_add = HashSet::<usize>::new();
@@ -23,13 +23,22 @@ fn find_misbehaving_num_with_preamble(preamble_num: u8, dataset: &Vec<usize>) ->
         possible_nums_to_add.insert(dataset[index]);
     }
     for index in preamble_num as usize..dataset.len() {
-        // check if the number is the sum of two DISTINCT num from set
+        if let false = is_num_the_sum_of_two_from_set(dataset[index], &possible_nums_to_add) {
+            return dataset[index];
+        }
+        possible_nums_to_add.remove(&dataset[start_index]);
+        start_index += 1;
+        end_index += 1;
+        possible_nums_to_add.insert(dataset[end_index]);
     }
-    127
+    0
 }
 
 fn is_num_the_sum_of_two_from_set(target_sum: usize, possible_nums: &HashSet<usize>) -> bool {
     for num in possible_nums {
+        if target_sum < *num {
+            continue;
+        }
         if *num == (target_sum - num) {
             continue;
         }
