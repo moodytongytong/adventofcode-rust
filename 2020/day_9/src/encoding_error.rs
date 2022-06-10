@@ -1,7 +1,10 @@
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
-use std::collections::HashSet;
+use std::collections::{
+    HashSet,
+    VecDeque,
+};
 
 pub fn create_dataset_from(filepath: &str) -> Vec<usize> {
     let mut dataset = Vec::<usize>::new();
@@ -49,6 +52,27 @@ fn is_num_the_sum_of_two_from_set(target_sum: usize, possible_nums: &HashSet<usi
     false
 }
 
+pub fn find_weakness_with_target_sum(target_sum: usize, dataset: &Vec<usize>) -> usize {
+    let mut contiguous_window = VecDeque::<usize>::new();
+    let mut total = 0;
+    let mut index = 0;
+    while index < dataset.len() {
+        if total < target_sum {
+            contiguous_window.push_back(dataset[index]);
+            total += dataset[index];
+            index += 1;
+        } else if total > target_sum {
+            let tail = contiguous_window.pop_front().unwrap();
+            total -= tail;
+        } else {
+            break;
+        }
+    }
+    let min = contiguous_window.iter().min().unwrap();
+    let max = contiguous_window.iter().max().unwrap();
+    min + max
+}
+
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where P: AsRef<Path>, {
     let file = File::open(filename)?;
@@ -83,5 +107,11 @@ mod tests {
         assert!(is_num_the_sum_of_two_from_set(49, &possible_nums));
         assert_eq!(false, is_num_the_sum_of_two_from_set(100, &possible_nums));
         assert_eq!(false, is_num_the_sum_of_two_from_set(50, &possible_nums));
+    }
+
+    #[test]
+    fn find_weakness_62() {
+        let dataset = create_dataset_from("test_data/test1.txt");
+        assert_eq!(62, find_weakness_with_target_sum(127, &dataset));
     }
 }
