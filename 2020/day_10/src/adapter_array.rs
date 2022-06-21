@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 
-fn create_adapters(filepath: &str) -> Vec<usize> {
+pub fn create_adapters(filepath: &str) -> Vec<usize> {
     let mut adapters = Vec::<usize>::new();
     if let Ok(lines) = read_lines(filepath) {
         for line in lines {
@@ -14,8 +14,20 @@ fn create_adapters(filepath: &str) -> Vec<usize> {
     adapters
 }
 
-fn find_differences_of_1_and_3_jolts_from(adapters: Vec<usize>) -> (usize, usize) {
-    (7, 5)
+pub fn find_differences_of_1_and_3_jolts_from(mut adapters: Vec<usize>) -> (usize, usize) {
+    adapters.sort();
+    adapters.insert(0, 0);
+    adapters.push(adapters[adapters.len() - 1] + 3);
+    let mut one_difference_count = 0;
+    let mut three_difference_count = 0;
+    for index in 1..adapters.len() {
+        if let 1 = adapters[index] - adapters[index-1] {
+            one_difference_count += 1;
+        } else {
+            three_difference_count += 1;
+        }
+    }
+    (one_difference_count, three_difference_count)
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
@@ -39,10 +51,16 @@ mod tests {
 
     #[test]
     fn correctly_find_differences_of_1_and_3_jolts() {
-        // sort the array and add max+3 into the array, then find the tuple
         let adapters = create_adapters("test_data/test1.txt");
         let result = find_differences_of_1_and_3_jolts_from(adapters);
         assert_eq!((7, 5), result);
+    }
+
+    #[test]
+    fn correctly_find_differences_of_1_and_3_jolts_on_more_complicated_example() {
+        let adapters = create_adapters("test_data/test2.txt");
+        let result = find_differences_of_1_and_3_jolts_from(adapters);
+        assert_eq!((22, 10), result);
     }
 
 }
