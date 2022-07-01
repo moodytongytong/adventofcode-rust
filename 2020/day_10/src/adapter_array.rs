@@ -1,12 +1,17 @@
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
+<<<<<<< HEAD
 use std::collections::{
     HashMap,
     HashSet,
 };
 
 pub fn create_ascending_adapters(filepath: &str) -> Vec<usize> {
+=======
+
+pub fn create_adapters(filepath: &str) -> Vec<usize> {
+>>>>>>> 4b9832353afd09eee2a50777a9e6aab20fa22b56
     let mut adapters = Vec::<usize>::new();
     if let Ok(lines) = read_lines(filepath) {
         for line in lines {
@@ -15,6 +20,7 @@ pub fn create_ascending_adapters(filepath: &str) -> Vec<usize> {
             } 
         }
     }
+<<<<<<< HEAD
     adapters.sort();
     adapters.insert(0, 0);
     adapters.push(adapters[adapters.len() - 1] + 3);
@@ -22,6 +28,15 @@ pub fn create_ascending_adapters(filepath: &str) -> Vec<usize> {
 }
 
 pub fn find_differences_of_1_and_3_jolts_from(adapters: &Vec<usize>) -> (usize, usize) {
+=======
+    adapters
+}
+
+pub fn find_differences_of_1_and_3_jolts_from(mut adapters: Vec<usize>) -> (usize, usize) {
+    adapters.sort();
+    adapters.insert(0, 0);
+    adapters.push(adapters[adapters.len() - 1] + 3);
+>>>>>>> 4b9832353afd09eee2a50777a9e6aab20fa22b56
     let mut one_difference_count = 0;
     let mut three_difference_count = 0;
     for index in 1..adapters.len() {
@@ -34,6 +49,7 @@ pub fn find_differences_of_1_and_3_jolts_from(adapters: &Vec<usize>) -> (usize, 
     (one_difference_count, three_difference_count)
 }
 
+<<<<<<< HEAD
 pub fn find_number_of_arrangements(adapters: &Vec<usize>) -> usize {
     let mut branch_node_to_posssible_immediate_nodes = HashMap::<usize, HashSet<usize>>::new();
     let mut branch_node_to_number_of_arrangements_to_end = HashMap::<usize, usize>::new();
@@ -72,6 +88,8 @@ pub fn find_number_of_arrangements(adapters: &Vec<usize>) -> usize {
     branch_node_to_number_of_arrangements_to_end[&branch_nodes_descending.pop().unwrap()]
 }
 
+=======
+>>>>>>> 4b9832353afd09eee2a50777a9e6aab20fa22b56
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where P: AsRef<Path>, {
     let file = File::open(filename)?;
@@ -85,21 +103,34 @@ mod tests {
 
     #[test]
     fn correctly_create_list_of_adapters() {
+<<<<<<< HEAD
         let adapters = create_ascending_adapters("test_data/test1.txt");
         assert_eq!(13, adapters.len());
         assert_eq!(0, adapters[0]);
         assert_eq!(22, adapters[12]);
+=======
+        let adapters = create_adapters("test_data/test1.txt");
+        assert_eq!(11, adapters.len());
+        assert_eq!(16, adapters[0]);
+        assert_eq!(4, adapters[10]);
+>>>>>>> 4b9832353afd09eee2a50777a9e6aab20fa22b56
     }
 
     #[test]
     fn correctly_find_differences_of_1_and_3_jolts() {
+<<<<<<< HEAD
         let adapters = create_ascending_adapters("test_data/test1.txt");
         let result = find_differences_of_1_and_3_jolts_from(&adapters);
+=======
+        let adapters = create_adapters("test_data/test1.txt");
+        let result = find_differences_of_1_and_3_jolts_from(adapters);
+>>>>>>> 4b9832353afd09eee2a50777a9e6aab20fa22b56
         assert_eq!((7, 5), result);
     }
 
     #[test]
     fn correctly_find_differences_of_1_and_3_jolts_on_more_complicated_example() {
+<<<<<<< HEAD
         let adapters = create_ascending_adapters("test_data/test2.txt");
         let result = find_differences_of_1_and_3_jolts_from(&adapters);
         assert_eq!((22, 10), result);
@@ -120,3 +151,11 @@ mod tests {
     }
 }
 
+=======
+        let adapters = create_adapters("test_data/test2.txt");
+        let result = find_differences_of_1_and_3_jolts_from(adapters);
+        assert_eq!((22, 10), result);
+    }
+
+}
+>>>>>>> 4b9832353afd09eee2a50777a9e6aab20fa22b56
