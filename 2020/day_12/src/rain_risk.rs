@@ -5,17 +5,30 @@ use std::path::Path;
 #[derive(PartialEq, Eq, Hash, Debug, Copy, Clone, PartialOrd, Ord)]
 struct Coord (isize, isize);
 
-struct Ship {
+impl Coord {
+    fn distance_from(self, target: Coord) -> usize {
+        (self.0 - target.0).abs() as usize + (self.1 - target.1).abs() as usize
+    }
+}
+
+#[derive(Debug, PartialEq, Copy, Clone)]
+#[repr(u8)]
+enum Direction {
+    E,
+    N,
+    W,
+    S,
+}
+
+pub struct Ship {
     direction: Direction,
-    direction_index: i8,
     location: Coord,
 }
 
 impl Ship {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             direction: Direction::E,
-            direction_index: 0,
             location: Coord(0, 0),
         }
     }
@@ -36,16 +49,14 @@ impl Ship {
 
     fn turn_left(&mut self, degree: usize) {
         let turn_value = degree / 90;
-        let new_direction_index = (turn_value as i8 + self.direction_index) % 4;
-        self.direction_index = new_direction_index;
-        self.update_direction();
+        let direction_index = (turn_value as i8 + self.direction as i8).rem_euclid(4) as u8;
+        self.direction = convert_to_direction(direction_index);
     }
 
     fn turn_right(&mut self, degree: usize) {
         let turn_value = degree / 90;
-        let new_direction_index = (self.direction_index - turn_value as i8) % 4;
-        self.direction_index = new_direction_index;
-        self.update_direction();
+        let direction_index = (self.direction as i8 - turn_value as i8).rem_euclid(4) as u8;
+        self.direction = convert_to_direction(direction_index);
     }
 
     fn shift_east(&mut self, distance: usize) {
@@ -73,22 +84,29 @@ impl Ship {
         }
     }
 
-    fn update_direction(&mut self) {
-        match self.direction_index {
-            0 => self.direction = Direction::E,
-            1 => self.direction = Direction::N,
-            2 => self.direction = Direction::W,
-            _ => self.direction = Direction::S,
+    pub fn find_distance_from_intructions(&mut self, instruction_filepath: &str) -> usize {
+        let mut instructions = Vec::<String>::new();
+        if let Ok(lines) = read_lines(instruction_filepath) {
+            for line in lines {
+                if let Ok(instruction) = line {
+                    instructions.push(instruction);
+                }
+            }
         }
+        for instruction in instructions {
+            self.shift(&instruction[..]);
+        }
+        self.location.distance_from(Coord(0, 0))
     }
 }
 
-#[derive(Debug, PartialEq)]
-enum Direction {
-    E,
-    N,
-    W,
-    S,
+fn convert_to_direction(direction_index: u8) -> Direction {
+    match direction_index{
+        0 => Direction::E,
+        1 => Direction::N,
+        2 => Direction::W,
+        _ => Direction::S,
+    }
 }
 
 
@@ -112,18 +130,37 @@ mod tests {
     #[test]
     fn instructions_to_turn_are_correctly_processed() {
         let mut ship = Ship::new();
+        // left turns
         ship.shift("L90");
         assert_eq!(Direction::N, ship.direction);
         ship.shift("L180");
         assert_eq!(Direction::S, ship.direction);
         ship.shift("L270");
         assert_eq!(Direction::W, ship.direction);
-        ship.shift("R90");
-        assert_eq!(Direction::N, ship.direction);
-        ship.shift("R180");
+        ship.shift("L90");
         assert_eq!(Direction::S, ship.direction);
-        ship.shift("R270");
+        ship.shift("L180");
+        assert_eq!(Direction::N, ship.direction);
+        ship.shift("L270");
         assert_eq!(Direction::E, ship.direction);
+        ship.shift("L90");
+        assert_eq!(Direction::N, ship.direction);
+        ship.shift("L90");
+        assert_eq!(Direction::W, ship.direction);
+        ship.shift("L180");
+        assert_eq!(Direction::E, ship.direction);
+        ship.shift("L270");
+        assert_eq!(Direction::S, ship.direction);
+        ship.shift("L90");
+        assert_eq!(Direction::E, ship.direction);
+
+        // right turns
+        ship.shift("R90");
+        assert_eq!(Direction::S, ship.direction);
+        ship.shift("R180");
+        assert_eq!(Direction::N, ship.direction);
+        ship.shift("R270");
+        assert_eq!(Direction::W, ship.direction);
         assert_eq!(Coord(0, 0), ship.location);
     }
 
@@ -140,5 +177,12 @@ mod tests {
         assert_eq!(Coord(4, -2), ship.location);
         ship.shift("W5");
         assert_eq!(Coord(-1, -2), ship.location);
+    }
+
+    #[test]
+    fn find_manhattan_distance_from_start() {
+        let mut ship = Ship::new();
+        let movement = ship.find_distance_from_intructions("test_data/test1.txt");
+        assert_eq!(25, movement);
     }
 }
