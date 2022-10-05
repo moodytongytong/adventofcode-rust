@@ -5,6 +5,7 @@ use std::collections::{
     HashSet,
     HashMap,
 };
+use modinverse::modinverse;
 
 pub fn find_wait_and_bus_id_product_from(input: &Vec::<String>) -> usize {
     let earliest_departure_time: usize = input[0].parse().unwrap();
@@ -37,6 +38,7 @@ pub fn create_input_holder(filepath: &str) -> Vec<String> {
     input
 }
 
+// using the Chinese remainder theorem
 pub fn the_earliest_time(bus_order: &String) -> usize {
     let mut bus_numbers_to_order = HashMap::<u16, u8>::new();
     for (order, word) in bus_order.split(",").enumerate() {
@@ -44,34 +46,19 @@ pub fn the_earliest_time(bus_order: &String) -> usize {
             bus_numbers_to_order.insert(bus_number, order as u8);
         }
     }
-    let mut ordered_buses: Vec<&u16> = bus_numbers_to_order.keys().collect();
-    ordered_buses.sort();
-    ordered_buses.reverse();
-    let slowest = ordered_buses[0];
-    let slowest_order = bus_numbers_to_order[slowest];
-    ordered_buses.remove(0);
-    let mut count = 0;
-    loop {
-        count += 1;
-        let time = *slowest as usize * count - slowest_order as usize;
-        let mut bus_meeting_requirement = 0;
-        for bus in &ordered_buses {
-            if (time + bus_numbers_to_order[bus] as usize) % **bus as usize == 0 {
-                bus_meeting_requirement += 1;
-            } else {
-                break;
-            }
-        }
-        if bus_meeting_requirement == ordered_buses.len() {
-            return time;
-        }
+
+    let ordered_buses: Vec<&u16> = bus_numbers_to_order.keys().collect();
+    let id_product: isize  = ordered_buses.iter().fold(1, |product, &&id| id as isize * product);
+    let mut time = 0;
+    for (id, order) in bus_numbers_to_order {
+        let remainder = order as usize;
+        let n_i = id_product / id as isize;
+        let x_i = modinverse(n_i as isize, id as isize);
+        let product_i = remainder * n_i as usize * x_i.unwrap() as usize;
+        time += product_i;
     }
+    id_product as usize - time.rem_euclid(id_product as usize)
 }
-
-pub fn the_earliest_time_clever_version(bus_order: &String) -> usize {
-    
-}
-
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where P: AsRef<Path>, {
@@ -112,6 +99,18 @@ mod tests {
 
     #[test]
     fn correctly_finds_part2_result_4() {
+        let answer = the_earliest_time(&String::from("67,x,7,59,61"));
+        assert_eq!(779210, answer);
+    }
+
+    #[test]
+    fn correctly_finds_part2_result_5() {
+        let answer = the_earliest_time(&String::from("67,7,x,59,61"));
+        assert_eq!(1261476, answer);
+    }
+
+    #[test]
+    fn correctly_finds_part2_result_6() {
         let answer = the_earliest_time(&String::from("1789,37,47,1889"));
         assert_eq!(1202161486, answer);
     }
