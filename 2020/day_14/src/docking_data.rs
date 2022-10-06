@@ -29,7 +29,22 @@ fn get_content_from(memory_instruction: String) -> (usize, usize) {
     (address, value)
 }
 
-fn register_input_from(filepath: &str) -> Vec<String> {
+pub fn execute_program(input: &Vec<String>) -> usize {
+    let mut memory = HashMap::<usize, usize>::new();
+    let mut mask = HashMap::<u8, char>::new();
+    for instruction in input {
+        if "mask".to_string() == instruction[0..4] {
+            mask = create_bitmask(instruction.to_string());
+        } else {
+            let (address, value) = get_content_from(instruction.to_string());
+            memory.insert(address, apply_bitmask(value, &mask));
+        }
+    }
+    let values: Vec<&usize> = memory.values().collect();
+    values.iter().copied().sum()
+}
+
+pub fn register_input_from(filepath: &str) -> Vec<String> {
     let mut input = Vec::<String>::new();
     if let Ok(lines) = read_lines(filepath) {
         for line in lines {
@@ -48,6 +63,13 @@ fn apply_bitmask(num_decimal: usize, mask: &HashMap<u8, char>) -> usize {
     }
     convert_binary_to_decimal(&num_binary)
 }
+
+// fn apply_bitmask2(num_decimal: usize, mask: &HashMap<u8, char>) ->  {
+//     let mut num_binary_string = convert_to_36bit_binary(num_decimal);
+//     for index in (0..36) {
+//     }
+//     convert_binary_to_decimal(&num_binary)
+// }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where P: AsRef<Path>, {
@@ -98,4 +120,22 @@ mod tests {
         assert_eq!(8, address_and_value.0);
         assert_eq!(11, address_and_value.1);
     }
+
+    #[test]
+    fn sum_correctly_calculated() {
+        let input = register_input_from("test_data/test1.txt");
+        let sum = execute_program(&input);
+        assert_eq!(165, sum);
+    }
+
+    // #[test]
+    // fn part_2_apply_bitmask_returns_all_possible_addresses() {
+    //     let mask = create_bitmask("mask = 000000000000000000000000000000X1001X".to_string());
+    //     let possible_destinations = apply_bitmask2(42, mask);
+    //     assert_eq!(4, possible_destinations.len());
+    //     assert!(possible_destinations.contains(26));
+    //     assert!(possible_destinations.contains(27));
+    //     assert!(possible_destinations.contains(58));
+    //     assert!(possible_destinations.contains(59));
+    // }
 }
