@@ -1,4 +1,5 @@
 mod rambunctious_recitation;
+mod rambunctious_recitation_array;
 use rambunctious_recitation::find_turn;
 
 fn main() {
