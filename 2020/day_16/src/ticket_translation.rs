@@ -1,8 +1,11 @@
 use std::fs::read_to_string;
-use std::collections::HashSet;
+use std::collections::{
+    HashSet, HashMap
+};
+
 
 pub struct Input {
-    ranges: Vec<(usize, usize)>,
+    ranges: HashMap<String, [(usize, usize); 2]>,
     my_ticket: Vec<usize>,
     other_tickets: HashSet<Vec<usize>>,
 }
@@ -20,10 +23,15 @@ impl Input {
     fn populate_ranges_from(&mut self, input: &str) {
         let content = input.split("\n").collect::<Vec<&str>>();
         for line in content {
-            for range in line.split(": ").collect::<Vec<&str>>()[1].split(" or ").collect::<Vec<&str>>() {
-                let numbers = range.split("-").collect::<Vec<&str>>();
-                self.ranges.push((numbers[0].parse::<usize>().unwrap(), numbers[1].parse::<usize>().unwrap()))
+            let rule = line.split(": ").collect::<Vec<&str>>();
+            let name = rule[0].to_string();
+            let ranges_expr = rule[1].split(" or ").collect::<Vec<&str>>();
+            let mut values: [(usize, usize); 2] = [(0, 0); 2];
+            for (idx, range_expr) in ranges_expr.iter().enumerate() {
+                let numbers_expr = range_expr.split("-").collect::<Vec<&str>>();
+                values[idx] = (numbers_expr[0].parse::<usize>().unwrap(), numbers_expr[1].parse::<usize>().unwrap());
             }
+            self.ranges.insert(name, values);
         }
     }
 
@@ -45,8 +53,10 @@ impl Input {
         let mut invalid_total = 0;
         for ticket in &self.other_tickets {
             'number_loop: for number in ticket {
-                for range in &self.ranges {
-                    if *number >= range.0 && *number <= range.1 {continue 'number_loop;}
+                for (_category, range_set) in &self.ranges {
+                    for range in range_set {
+                        if *number >= range.0 && *number <= range.1 {continue 'number_loop;}
+                    }
                 }
                 invalid_total += number;
             }
@@ -57,7 +67,7 @@ impl Input {
 
 pub fn create_formatted_input_from(filepath: &str) -> Input {
     let mut input = Input {
-        ranges : Vec::<(usize, usize)>::new(),
+        ranges : HashMap::<String, [(usize, usize); 2]>::new(),
         my_ticket : Vec::<usize>::new(),
         other_tickets : HashSet::<Vec<usize>>::new(),
     };
@@ -79,11 +89,16 @@ mod tests {
     fn info_correctly_registered() {
         let info = create_formatted_input_from("test_data/test1.txt");
         assert_eq!(3, info.my_ticket.len());
-        assert_eq!(6, info.ranges.len());
+        assert_eq!(3, info.ranges.len());
         assert_eq!(4, info.other_tickets.len());
 
-        assert_eq!((1, 3), info.ranges[0]);
-        assert_eq!((5, 7), info.ranges[1]);
+        assert_eq!([(1, 3), (5, 7)], info.ranges["class"]);
+        assert_eq!([(6, 11), (33, 44)], info.ranges["row"]);
+        assert_eq!([(13, 40), (45, 50)], info.ranges["seat"]);
+
+        assert!(info.my_ticket.contains(&7));
+        assert!(info.my_ticket.contains(&1));
+        assert!(info.my_ticket.contains(&14));
     }
 
     #[test]
