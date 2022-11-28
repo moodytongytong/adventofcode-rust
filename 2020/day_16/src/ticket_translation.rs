@@ -55,13 +55,39 @@ impl Input {
             'number_loop: for number in ticket {
                 for (_category, range_set) in &self.ranges {
                     for range in range_set {
-                        if *number >= range.0 && *number <= range.1 {continue 'number_loop;}
+                        if Self::is_number_valid(*number, *range) {continue 'number_loop;}
                     }
                 }
                 invalid_total += number;
             }
         }
         invalid_total
+    }
+
+    fn is_number_valid(number: usize, range: (usize, usize)) -> bool  {
+        return number >= range.0 && number <= range.1;
+    }
+
+    fn find_categories_for_number(&self, number: usize) -> HashSet<&str> {
+        let mut possible_categories = HashSet::<&str>::new();
+        'category_loop: for (category, range_set) in &self.ranges {
+            for range in range_set {
+                if Self::is_number_valid(number, *range) {
+                    possible_categories.insert(category);
+                    continue 'category_loop;
+                }
+            }
+        }
+        possible_categories
+    }
+
+    fn find_categories_for_position(&self, position: usize) -> &str {
+        let mut result = HashSet::<&str>::from(self.ranges.keys().collect()); // NEED TO PICK UP ALL KEYS HERE
+        for ticket in &self.other_tickets {
+            let number = ticket[position];
+            result.intersection(&self.find_categories_for_number(number));
+        }
+        result.iter().next().unwrap().clone()
     }
 }
 
@@ -105,5 +131,21 @@ mod tests {
     fn sum_invalid_values_correctly() {
         let info = create_formatted_input_from("test_data/test1.txt");
         assert_eq!(71, info.find_sum_of_invalid_values());
+    }
+
+    #[test]
+    fn find_set_of_possibilities_for_a_number() {
+        let info = create_formatted_input_from("test_data/test2.txt");
+        let set_of_cats = info.find_categories_for_number(3);
+        let mut expected_set = HashSet::<&str>::new();
+        expected_set.insert("row");
+        expected_set.insert("seat");
+        assert_eq!(expected_set, set_of_cats);
+    }
+
+    #[test]
+    fn find_category_for_position_correctly() {
+        let info = create_formatted_input_from("test_data/test2.txt");
+        assert_eq!("row", info.find_categories_for_position(0));
     }
 }
