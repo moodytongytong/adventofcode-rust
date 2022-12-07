@@ -1,16 +1,17 @@
 use std::fs::read_to_string;
 use std::collections::{
-    HashSet, HashMap
+    HashSet, HashMap,
+    VecDeque,
 };
 use std::cell::RefCell;
 
 
 pub struct Input {
     ranges: HashMap<String, [(usize, usize); 2]>,
-    my_ticket: Vec<usize>,
+    pub my_ticket: Vec<usize>,
     other_tickets: RefCell<HashSet<Vec<usize>>>,
     invalid_ticekts: RefCell<HashSet<Vec<usize>>>,
-    field_position: RefCell<HashMap<usize, String>>,
+    pub field_position: RefCell<HashMap<usize, String>>,
 }
 
 impl Input {
@@ -54,7 +55,7 @@ impl Input {
 
     pub fn find_sum_of_invalid_values(&self) -> usize {
         let mut invalid_total = 0;
-        for ticket in self.other_tickets.borrow() {
+        for ticket in self.other_tickets.borrow().iter() {
             'number_loop: for number in ticket {
                 for (_category, range_set) in &self.ranges {
                     for range in range_set {
@@ -85,20 +86,13 @@ impl Input {
         possible_categories
     }
 
-    fn find_category_for_position(&self, position: usize) -> &str {
+    fn find_categories_for_position(&self, position: usize) -> HashSet<&str> {
         let mut result = self.ranges.keys().map(|category| category.as_str()).collect::<HashSet<_>>();
-        for known_category in self.field_position.borrow().values() {
-            result.remove(known_category as &str);
-        }
-        for ticket in self.other_tickets.borrow() {
+        for ticket in self.other_tickets.borrow().iter() {
             let number = ticket[position];
             result = result.intersection(&self.find_categories_for_number(number)).copied().collect::<HashSet<_>>();
-            println!("number is {} and current result after intersection is {:?}", number, result)
         }
-        println!("result is {:?}", result);
-        let result = result.iter().next().unwrap().clone();
-        self.field_position.borrow_mut().insert(position, result.to_string());
-        &self.field_position.borrow()[&position] as &str
+        result
     }
 
     fn remove_invalid_tickets(&self) {
@@ -107,9 +101,23 @@ impl Input {
         }
     }
 
-    fn populate_field_position_map(&mut self) {
+    pub fn populate_field_position_map(&self) {
+        let mut undefined_positions = VecDeque::<(usize, HashSet<&str>)>::new();
+        self.remove_invalid_tickets();
         for position in 0..self.my_ticket.len() {
-            self.find_category_for_position(position);
+            undefined_positions.push_back((position, self.find_categories_for_position(position)));
+        }
+        while !undefined_positions.is_empty() {
+            if let Some((position, mut possible_categories)) = undefined_positions.pop_front() {
+                if possible_categories.len() == 1 {
+                    self.field_position.borrow_mut().insert(position, possible_categories.iter().next().unwrap().clone().to_string());
+                } else {
+                    for known_category in self.field_position.borrow().values() {
+                        possible_categories.remove(known_category as &str);
+                    }
+                    undefined_positions.push_back((position, possible_categories))
+                }
+            }
         }
     }
 }
@@ -169,11 +177,16 @@ mod tests {
     }
 
     #[test]
-    fn find_category_for_position_correctly() {
+    fn find_possible_categories_for_a_position_correctly() {
         let info = create_formatted_input_from("test_data/test2.txt");
-        assert_eq!("row", info.find_category_for_position(0));
-        assert_eq!("class", info.find_category_for_position(1));
-        assert_eq!("seat", info.find_category_for_position(2));
+        let expected_position_0_categories = HashSet::from(["row"]);
+        assert_eq!(expected_position_0_categories, info.find_categories_for_position(0));
+
+        let expected_position_1_categories = HashSet::from(["row", "class"]);
+        assert_eq!(expected_position_1_categories, info.find_categories_for_position(1));
+
+        let expected_position_2_categories = HashSet::from(["row", "class", "seat"]);
+        assert_eq!(expected_position_2_categories, info.find_categories_for_position(2));
     }
 
     #[test]
@@ -193,6 +206,5 @@ mod tests {
         expected.insert(1, "class".to_string());
         expected.insert(2, "seat".to_string());
         assert_eq!(expected, info.field_position.take());
-
     }
 }
