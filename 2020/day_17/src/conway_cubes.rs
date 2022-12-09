@@ -1,9 +1,7 @@
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
-use std::collections::{
-    HashMap, HashSet
-};
+use std::collections::HashSet;
 use std::cell::RefCell;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
@@ -15,10 +13,10 @@ impl Coord {
         let deltas : [(i8, i8, i8); 26] = [
             (-1, -1, -1),(-1, -1, 0),(-1, -1, 1),
             (-1, 0, -1),(-1, 0, 0),(-1, 0, 1),
-            (-1, 1, -1),(-1, 1, 0),(-1, 0, 1),
+            (-1, 1, -1),(-1, 1, 0),(-1, 1, 1),
             (0, -1, -1),(0, -1, 0),(0, -1, 1),
             (0, 0, -1),(0, 0, 1),
-            (0, 1, -1),(0, 1, 0),(0, 0, 1),
+            (0, 1, -1),(0, 1, 0),(0, 1, 1),
             (1, -1, -1),(1, -1, 0),(1, -1, 1),
             (1, 0, -1),(1, 0, 0),(1, 0, 1),
             (1, 1, -1),(1, 1, 0),(1, 1, 1)
@@ -35,70 +33,76 @@ impl Coord {
     }
 }
 
-// #[derive(Debug, PartialEq, Eq, Hash)]
-// struct Cube {
-//     position: Coord,
-//     is_active: bool,
-// }
-
-struct World {
-    cubes: RefCell<HashMap<Coord, bool>>,
+pub struct World {
+    active_cubes: RefCell<HashSet<Coord>>,
 }
 
 impl World {
-    fn count_active(&self) -> usize {
-        self.cubes.borrow().values().filter(|&is_active| *is_active).count()
+    pub fn count_active(&self) -> usize {
+        self.active_cubes.borrow().iter().count()
     }
 
     fn apply_rule_on(&self, position: Coord) -> bool {
-        if let Some(state) = self.cubes.borrow().get(&position) {
-            if *state { return self.active_rule_on(position); }
-            else { return self.inactive_rule_on(position); }
+        if self.active_cubes.borrow().contains(&position) {
+            return self.active_rule_on(position);
         } else {
             return self.inactive_rule_on(position);
         }
     }
 
     fn active_rule_on(&self, position: Coord) -> bool {
-        true
+        let active_neighbor_count = self.count_active_neighbors_of(position);
+        return active_neighbor_count == 2 || active_neighbor_count == 3;
     }
 
     fn inactive_rule_on(&self, position: Coord) -> bool {
-        true
+        return self.count_active_neighbors_of(position) == 3;
     }
 
     fn count_active_neighbors_of(&self, position: Coord) -> usize {
         position.get_neighbors().iter().filter(
-            |&neighbor| self.cubes.borrow().get(neighbor) != None && 
-            self.cubes.borrow()[neighbor] ).count()
+            |&neighbor| self.active_cubes.borrow().contains(neighbor) ).count()
+    }
+
+    fn update(&self) {
+        let mut new_cubes = HashSet::<Coord>::new();
+        for cube in self.active_cubes.borrow().iter() {
+            new_cubes = new_cubes.union(&cube.get_neighbors()).copied().collect::<HashSet<_>>();
+            new_cubes.insert(*cube);
+        }
+        let mut new_active_cubes = HashSet::<Coord>::new();
+        for cube in new_cubes {
+            if self.apply_rule_on(cube) {
+                new_active_cubes.insert(cube);
+            }
+        }
+        self.active_cubes.replace(new_active_cubes);
+    }
+
+    pub fn update_times(&self, count: usize) {
+        for _ in 0..count { self.update(); }
     }
 }
 
-
-
-fn create_world_from(filepath: &str) -> World {
-    let mut cubes = HashMap::<Coord, bool>::new();
+pub fn create_world_from(filepath: &str) -> World {
+    let mut active_cubes = HashSet::<Coord>::new();
     if let Ok(lines) = read_lines(filepath) {
-        let mut x = 0;
+        let mut y = 0;
         for line in lines {
-            let mut y = 0;
+            let mut x = 0;
             if let Ok(symbols) = line {
-                // println!("the variable symbols is {}", symbols);
                 for symbol in symbols.chars(){
                     let position = Coord(x, y, 0);
-                    // println!("The position is {:?}", position);
                     if symbol == '#' {
-                        cubes.insert(position, true);
-                    } else {
-                        cubes.insert(position, false);
+                        active_cubes.insert(position);
                     }
-                    y += 1;
+                    x += 1;
                 }
             }
-            x += 1;
+            y += 1;
         }
     }
-    World { cubes: RefCell::new(cubes) }
+    World { active_cubes: RefCell::new(active_cubes) }
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
@@ -117,10 +121,10 @@ mod tests {
         let expected_neighbors = HashSet::from([
             Coord(-1, -1, -1),Coord(-1, -1, 0),Coord(-1, -1, 1),
             Coord(-1, 0, -1),Coord(-1, 0, 0),Coord(-1, 0, 1),
-            Coord(-1, 1, -1),Coord(-1, 1, 0),Coord(-1, 0, 1),
+            Coord(-1, 1, -1),Coord(-1, 1, 0),Coord(-1, 1, 1),
             Coord(0, -1, -1),Coord(0, -1, 0),Coord(0, -1, 1),
             Coord(0, 0, -1),Coord(0, 0, 1),
-            Coord(0, 1, -1),Coord(0, 1, 0), Coord(0, 0, 1),
+            Coord(0, 1, -1),Coord(0, 1, 0), Coord(0, 1, 1),
             Coord(1, -1, -1),Coord(1, -1, 0),Coord(1, -1, 1),
             Coord(1, 0, -1),Coord(1, 0, 0),Coord(1, 0, 1),
             Coord(1, 1, -1),Coord(1, 1, 0),Coord(1, 1, 1)
@@ -131,7 +135,6 @@ mod tests {
     #[test]
     fn world_correctly_created_from_input() {
         let world = create_world_from("test_data/test1.txt");
-        assert_eq!(9, world.cubes.borrow().len());
         assert_eq!(5, world.count_active());
     }
 
@@ -145,14 +148,31 @@ mod tests {
     fn active_node_rule_correctly_applies() {
         let world = create_world_from("test_data/test1.txt");
         assert_eq!(true, world.apply_rule_on(Coord(2, 1, 0)));
+        assert_eq!(false, world.apply_rule_on(Coord(1, 0, 0)));
     }
 
     #[test]
     fn inactive_node_rule_correctly_applies() {
-
+        let world = create_world_from("test_data/test1.txt");
+        assert_eq!(true, world.apply_rule_on(Coord(0, 1, 0)));
+        assert_eq!(false, world.apply_rule_on(Coord(0, 0, 0)));
     }
 
-    // need to find out how counting is done exactly
+    #[test]
+    fn test_world_could_update_correctly() {
+        let world = create_world_from("test_data/test1.txt");
+        world.update();
+        assert_eq!(11, world.count_active());
+        world.update();
+        assert_eq!(21, world.count_active());
+        world.update();
+        assert_eq!(38, world.count_active());
+    }
 
-
+    #[test]
+    fn test_world_correctly_updates_for_6_cycles() {
+        let world = create_world_from("test_data/test1.txt");
+        world.update_times(6);
+        assert_eq!(112, world.count_active());
+    }
 }

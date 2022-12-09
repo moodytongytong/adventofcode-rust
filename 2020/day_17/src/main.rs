@@ -1,8 +1,8 @@
 mod conway_cubes;
+use conway_cubes::create_world_from;
 
 fn main() {
-    // let finder = Finder::new("./test_data/input.txt");
-    // println!("Answer to part 1 is {}", finder.find_product_of_two_targets_sum_to(2020));
-    // println!("Answer to part 2 is {}", finder.find_product_of_three_targets_sum_to(2020));
-
+    let world = create_world_from("test_data/input.txt");
+    world.update_times(6);
+    println!("The number of active cubes after 6 cycles is {}", world.count_active());
 }
