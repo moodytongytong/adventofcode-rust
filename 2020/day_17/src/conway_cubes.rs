@@ -7,7 +7,13 @@ use std::cell::RefCell;
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 struct Coord(isize, isize, isize);
 
-impl Coord {
+// n = len(pool)
+// for indices in itertools.product(range(-1,2), repeat=n):
+
+// let tuple = get_tuples([]) -> [(-1), (0), (1)]
+// get_tuples([(-1), (0), (1)]) -> [(-1,-1), (0,-1), (1,-1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1)]
+
+impl Neighbors for Coord {
     fn get_neighbors(&self) -> HashSet<Coord> {
         let mut neighbors = HashSet::<Coord>::new();
         let deltas : [(i8, i8, i8); 26] = [
@@ -28,9 +34,12 @@ impl Coord {
             let z = delta.2 as isize + self.2;
             neighbors.insert(Coord(x, y, z));
         }
-
         neighbors
     }
+}
+
+trait Neighbors {
+    fn get_neighbors(&self) -> HashSet<Coord>;
 }
 
 pub struct World {
@@ -111,6 +120,10 @@ where P: AsRef<Path>, {
     Ok(io::BufReader::new(file).lines())
 }
 
+// fn get_tuples( :HashSet<>) -> HashSet {
+    
+// }
+
 #[cfg(test)]
 mod tests {
     
@@ -175,4 +188,13 @@ mod tests {
         world.update_times(6);
         assert_eq!(112, world.count_active());
     }
+
+    // #[test]
+    // fn get_tuples_correctly() {
+    //     let tuple = get_tuples(HashSet::<isize>::new());
+    //     let expected_result = HashSet::from([
+    //         (-1), (0), (1)
+    //         ]);
+    //     assert_eq!(expected_result, tuple);
+    // }
 }
