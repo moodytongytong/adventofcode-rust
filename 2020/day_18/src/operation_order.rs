@@ -94,7 +94,7 @@ mod tests {
     }
 
     #[test]
-    fn find_sum_correctly() {
+    fn find_part1_sum_correctly() {
         assert_eq!(26335, find_sum_from_homework("test_data/test1.txt"));
     }
 }
