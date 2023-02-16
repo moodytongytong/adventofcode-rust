@@ -1,15 +1,13 @@
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
-use std::collections::HashMap;
+use std::collections::{
+    HashMap,
+    LinkedList,
+};
 use regex::Regex;
 
 fn digest_rules(unprocessed_rules: Vec<String>) -> HashMap<u32, String> {
-    // let re = RegexSet::new(&[
-    //     r"\d: \"a\"",
-    //     r"", // piped
-    //     r"", // ones with only digits
-    // ]).unwrap();
     let matcher = Regex::new(r#"^\d+: "a|b"$"#).unwrap();
     let mut rules = HashMap::<u32, String>::new();
     for raw_rule in unprocessed_rules {
@@ -28,6 +26,17 @@ fn digest_rules(unprocessed_rules: Vec<String>) -> HashMap<u32, String> {
 
 fn turn_rules_to_regex(rules: &mut HashMap<u32, String>) {
     let int_matcher = Regex::new(r"\d+").unwrap();
+    let mut rules_to_be_processed = LinkedList::<(&u32, &String)>::new();
+    rules_to_be_processed.push_front(rules.get_key_value(&0).unwrap());
+    while !rules_to_be_processed.is_empty() {
+        let current_rule = rules_to_be_processed.front().unwrap();
+        if int_matcher.is_match(current_rule.1) {
+
+        } else {
+            let processed_rule = rules_to_be_processed.pop_front().unwrap();
+            rules.insert(*processed_rule.0, *processed_rule.1);
+        }
+    }
 }
 
 
