@@ -4,16 +4,30 @@ use std::path::Path;
 use std::collections::HashMap;
 use regex::Regex;
 
-fn digest_rules(unprocessed_rules: Vec<String>) -> HashMap<usize, String> {
-    let re = RegexSet::new(&[
-        r"\d: \"a\"",
-        r"", // piped
-        r"", // ones with only digits
-    ]).unwrap();
-
-    for rule in unprocessed_rules {
-
+fn digest_rules(unprocessed_rules: Vec<String>) -> HashMap<u32, String> {
+    // let re = RegexSet::new(&[
+    //     r"\d: \"a\"",
+    //     r"", // piped
+    //     r"", // ones with only digits
+    // ]).unwrap();
+    let matcher = Regex::new(r#"^\d+: "a|b"$"#).unwrap();
+    let mut rules = HashMap::<u32, String>::new();
+    for raw_rule in unprocessed_rules {
+        let colon_index = raw_rule.find(":").unwrap();
+        let rule_index = raw_rule[..colon_index].parse::<u32>().unwrap();
+        if matcher.is_match(&raw_rule) {
+            if raw_rule.contains("a") { rules.insert(rule_index, "a".to_string()); } 
+            else { rules.insert(rule_index, "b".to_string()); }
+        } else {
+            let rule_content = raw_rule[colon_index+2..].to_string();
+            rules.insert(rule_index, rule_content);
+        }
     }
+    rules
+}
+
+fn turn_rules_to_regex(rules: &mut HashMap<u32, String>) {
+    let int_matcher = Regex::new(r"\d+").unwrap();
 }
 
 
@@ -43,7 +57,7 @@ where P: AsRef<Path>, {
 
 #[cfg(test)]
 mod tests {
-    
+    use regex::Regex;
     use super::*;
 
     #[test]
@@ -54,15 +68,38 @@ mod tests {
     }
 
     #[test]
-    fn match_rules_correctly() {
-        let matcher = match("4: \"a\"");
+    fn find_correct_matchers_for_dfferent_rules() {
+        let matcher_1 = Regex::new(r#"^\d+: "a"$"#).unwrap();
+        assert!(matcher_1.is_match("4: \"a\""));
+
+        let matcher_2 = Regex::new(r#"^\d+: "b"$"#).unwrap();
+        assert!(matcher_2.is_match("5: \"b\""));
+
+        let matcher_3 = Regex::new(r"^\d+: \d+ \d+ \| (\d+) (\d+)$").unwrap();
+        assert!(matcher_3.is_match("3: 4 5 | 5 4"));
+
+        let matcher_4 = Regex::new(r"^\d+:( \d+)+$").unwrap();
+        assert!(matcher_4.is_match("0: 4 1 5"));
+
+        let string_regex_test = "^(ab|ba)$";
+        let matcher_test = Regex::new(string_regex_test).unwrap();
+        assert!(matcher_test.is_match("ab"));
+        assert!(!matcher_test.is_match("abba"));
     }
 
 
-    // #[test]
-    // fn regex_for_quoted_rule_correctly_created() {
-    //     let (rules, messages) = get_input_from("test_data/test1.txt");
-    //     let processed_rules = digest_rules(rules);
-    //     assert_eq!("a", processed_rules[&4]);
-    // }
+    #[test]
+    fn regex_for_quoted_rule_correctly_created() {
+        let (rules, _) = get_input_from("test_data/test1.txt");
+        let registered_rules = digest_rules(rules);
+        assert_eq!("a", registered_rules[&4]);
+    }
+
+    #[test]
+    fn update_all_rules_into_regex() {
+        let (rules, _) = get_input_from("test_data/test1.txt");
+        let mut rules = digest_rules(rules);
+        turn_rules_to_regex(&mut rules);
+        assert_eq!("(ab|ba)", rules[&3]);
+    }
 }
